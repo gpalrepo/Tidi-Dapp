@@ -22,6 +22,7 @@ function App() {
   const [dataList, setDataList] = useState([]);
   const [token, setToken] = useState('So11111111111111111111111111111111111111112');
   const [amount, setAmount] = useState(0);
+  const [destination, setDestination] = useState('GjtBnmqmUrW5A2f6BFm1mjvQFiwhRkf827hgqfUqjgJP');
 
   console.log(token);
   console.log(value);
@@ -63,7 +64,10 @@ function App() {
   }
 
   async function transfer() {
-
+    if (amount<0 && amount > getBalance(baseAccount.publicKey as String)){
+	alert("invalid amount");
+        return;
+    }
     const provider = await getProvider();
     const idl = await anchor.Program.fetchIdl(CANDY_MACHINE_PROGRAM, provider);
     const programID = new PublicKey(idl.metadata.address);
@@ -71,15 +75,16 @@ function App() {
     const program = new anchor.Program(idl, programID, provider);
     try {
       /* interact with the program via rpc */
-      await program.rpc.initialize("Hello World", {
+      await program.rpc.transfer(amount, {
         accounts: {
           baseAccount: baseAccount.publicKey,
           user: provider.wallet.publicKey,
           systemProgram: SystemProgram.programId,
+          mint: (new anchor.web3.PublicKey(destination)),
+	        token_program: (new anchor.web3.PublicKey(token))
         },
         signers: [baseAccount]
       });
-
       const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
       console.log('account: ', account);
       setValue(account.data.toString());
@@ -125,6 +130,7 @@ function App() {
                   })}
                   onChange={(e)=>{setToken(e.value)}}
                 />
+                <input type="text" style={{width:"100%", height:"30px", borderRadius:"10px", textAlign:"center", marginTop:"50px"}} onChange={(e)=>{console.log(e.target.value)}} />
                 <input type="number" style={{width:"100%", height:"30px", borderRadius:"10px", textAlign:"center", marginTop:"50px"}} onChange={(e)=>{console.log(e.target.value)}} />
                 <button onClick={transfer} style={{padding:"0 20px", margin:"50px", fontSize:"15pt"}}>transfer</button>
               </div>
